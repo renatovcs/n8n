@@ -7,7 +7,7 @@ on:
 
 env:
   # ATENÇÃO: Use o nome do seu repositório em minúsculas aqui!
-  IMAGE_NAME: ghcr.io/automate-brasil/n8n-custom
+  IMAGE_NAME: ghcr.io/renatovcs/n8n
 
 jobs:
   build-and-push:
