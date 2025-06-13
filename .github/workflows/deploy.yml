@@ -1,0 +1,52 @@
+name: Build e Deploy n8n Customizado
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  # ATENÇÃO: Use o nome do seu repositório em minúsculas aqui!
+  IMAGE_NAME: ghcr.io/automate-brasil/n8n-custom
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Login no GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build e Push da imagem Docker
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ env.IMAGE_NAME }}:latest
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Conectar no VPS e fazer deploy
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.C03_HOST }}
+          username: ${{ secrets.C03_USER }}
+          key: ${{ secrets.C03_SSH_PRIVATE_KEY }}
+          script: |
+            cd ~/n8n-docker
+            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            docker compose pull
+            docker compose up -d
+            docker image prune -af
